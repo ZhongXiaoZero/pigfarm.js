@@ -113,6 +113,132 @@ test('requestEnd hook', async function () {
 		service.call({});
 	})
 });
+test('fixBefore hook', async t => {
+	t.plan(3);
+	var service = pigfarm({
+		render: ()=> '<div></div>',
+		data: {
+			auto: {
+				type: "request",
+				action: {
+					url: "what://ever",
+					fixAfter: function (data) {
+						extend(data, {wocao: 1});
+						return data;
+					}
+				}
+			},
+			time3000: {
+				type: "request",
+				action: {
+					url: "time3000://ever",
+					fixAfter: function (data) {
+						extend(data, {wocao: 1});
+						return data;
+					}
+				}
+			},
+			error: {
+				type: "request",
+				dependencies: ['auto', 'time3000'],
+				action: {
+					url: "error://",
+					onError: function(err){
+						return err;
+					}
+				}
+			}
+		}
+	});
+	service.on('fixBefore', function(ctx){
+		t.true(true);
+	});
+	return await service({}).catch(e => {});
+});
+test('fixAfter hook', async t => {
+	t.plan(2);
+	var service = pigfarm({
+		render: ()=> '<div></div>',
+		data: {
+			auto: {
+				type: "request",
+				action: {
+					url: "what://ever",
+					fixAfter: function (data) {
+						extend(data, {wocao: 1});
+						return data;
+					}
+				}
+			},
+			time3000: {
+				type: "request",
+				action: {
+					url: "time3000://ever",
+					fixAfter: function (data) {
+						extend(data, {wocao: 1});
+						return data;
+					}
+				}
+			},
+			error: {
+				type: "request",
+				dependencies: ['auto', 'time3000'],
+				action: {
+					url: "error://",
+					onError: function(err){
+						return err;
+					}
+				}
+			}
+		}
+	});
+	service.on('fixAfter', function(ctx){
+		t.true(true);
+	});
+	return await service({}).catch(e => {});
+});
+test('onError hook', async t => {
+	t.plan(1);
+	var service = pigfarm({
+		render: ()=> '<div></div>',
+		data: {
+			auto: {
+				type: "request",
+				action: {
+					url: "what://ever",
+					fixAfter: function (data) {
+						extend(data, {wocao: 1});
+						return data;
+					}
+				}
+			},
+			time3000: {
+				type: "request",
+				action: {
+					url: "time3000://ever",
+					fixAfter: function (data) {
+						extend(data, {wocao: 1});
+						return data;
+					}
+				}
+			},
+			error: {
+				type: "request",
+				dependencies: ['auto', 'time3000'],
+				action: {
+					url: "error://",
+					onError: function(err){
+						return err;
+					}
+				}
+			}
+		}
+	});
+	service.on('onError', function(ctx){
+		t.true(true);
+	});
+	return await service({}).catch(e => {});
+});
 test('fetchers hook', async t=> {
 	t.plan(3);
 	var service = pigfarm({
@@ -140,8 +266,12 @@ test('fetchers hook', async t=> {
 			},
 			error: {
 				type: "request",
+				dependencies: ['auto', 'time3000'],
 				action: {
-					url: "error://"
+					url: "error://",
+					onError: function(err){
+						return err;
+					}
 				}
 			}
 		}
@@ -160,7 +290,7 @@ test('fetchers hook', async t=> {
 	service.on('anyfetcherror', function(ctx, stats) {
 		t.is(stats.name, 'error');
 	});
-	return await service({});
+	return await service({}).catch(e => {});
 });
 test('dependencies', async function () {
 	var result = await pigfarm({

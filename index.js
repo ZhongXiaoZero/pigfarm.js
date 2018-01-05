@@ -159,11 +159,10 @@ var exportee = module.exports = function (config, option) {
 			// request, fetch them when user's requests come in
 			// if this config is request, create fetchers
 			fetchers[key] = dataSource.action;
-			fetchers[key].fixBefore = (function(fixBefore) {
-				return function() {
-
-				}
-			})(fetchers[key].fixBefore);
+			// emit events when fixBefore, fixAfter, onError called
+			fetchers[key].fixBefore = decorateWithEvent(fetchers[key].fixBefore, exportee, 'fixBefore');
+			fetchers[key].fixAfter = decorateWithEvent(fetchers[key].fixAfter, exportee, 'fixAfter');
+			fetchers[key].onError = decorateWithEvent(fetchers[key].onError || function(a){ return false; }, exportee, 'onError');
 
 			fetchers[key].name = key;
 
@@ -192,9 +191,14 @@ exportee.useFetcher = function (fetcher) {
 	fetchersFactory.useFetcher.apply(this, arguments);
 };
 
-function decorateWithEvent(fn, emitter) {
+function decorateWithEvent(fn, emitter, eventName) {
+	if(!fn){
+		fn = function (a){
+			return a;
+		}
+	}
 	return function() {
-		emitEvent(emitter, [this]);
+		emitEvent(emitter, [eventName, this]);
 		return fn.apply(this, arguments);
 	}
 }
